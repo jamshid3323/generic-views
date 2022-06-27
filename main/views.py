@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DetailView
+from django.shortcuts import render, redirect
+from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DetailView, DeleteView, View
 from .models import BooksModel
 from .form import CreateBookForm
 
@@ -47,3 +47,30 @@ class UpdateBookView(UpdateView):
 class BookDetailView(DetailView):
     model = BooksModel
     template_name = 'main/detail.html'
+
+
+class BookDeleteView(DeleteView):
+    model = BooksModel
+    template_name = 'main/delete.html'
+    success_url = '/'
+
+
+class BookView(View):
+
+    def get(self, request, *args, **kwargs):
+        q = self.request.GET.get('q')
+        if q:
+            qs = BooksModel.objects.all().filter(name__icontains=q)
+        else:
+            qs = BooksModel.objects.all()
+        return render(request, 'main/index.html', {
+            'object_list': qs,
+            'form': CreateBookForm
+        })
+
+    def post(self, request, *args, **kwargs):
+        data = CreateBookForm(data=request.POST)
+        if data.is_valid():
+            data.save()
+
+        return redirect('/')
